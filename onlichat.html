@@ -4,70 +4,101 @@
 <script language="JavaScript">
 
 $(document).ready(function() {
-  if(!("WebSocket" in window)){
-  $('#chatLog, input, button').fadeOut("fast");
-  $('<p>Oh no, you need a browser that supports WebSockets. How about <a href="http://www.google.com/chrome">Google Chrome</a>?</p>').appendTo('#container');
-  }else{
-      //The user has WebSockets
-      connect();
-      function connect(){
-          var socket;
-          var host = "ws://47.16.252.226:7144/";
-          try{
-              var socket = new WebSocket(host);
-              message('<p class="event">Socket Status: '+socket.readyState);
-              socket.onopen = function(){
-             	 message('<p class="event">Connected!');
-              }
-              socket.onmessage = function(msg){
-             	 message('<p class="message">'+msg.data);
-              }
-              socket.onclose = function(){
-              	message('<p class="event">Disconnected');
-              }
-          } catch(exception){
-             message('<p><b><font color=\"red\">'+exception+'</font></b>');
-          }
-          function send(){
-              var text = $('#text').val();
-              if(text==""){
-                  message('<p class="warning">Chat with others!');
-                  return ;
-              }
-              try{
-                  socket.send(text);
-              } catch(exception){
-                 message('<p class="warning">');
-              }
-              $('#text').val("");
-          }
-          function message(msg){
-            $('#chatLog').append(msg+'</p>');
-          }
-          $('#text').keypress(function(event) {
-              if (event.keyCode == '13') {
-                send();
-              }
-          });
-          $('#disconnect').click(function(){
-             socket.close();
-          });
-      }//End connect
-  }//End else
+	if(!("WebSocket" in window)) {
+		$('#chatLog, input, button').fadeOut("fast");
+		$('<p>Oh no, you need a browser that supports WebSockets. How about <a href="http://www.google.com/chrome">Google Chrome</a>?</p>').appendTo('#container');
+	}
+	else {
+		var connected = false;
+
+		connect();
+		function connect() {
+			if(connected)
+				return;
+			var socket;
+			var host = "ws://localhost:7144/";
+			try {
+				var socket = new WebSocket(host);
+				
+				socket.onopen = function(){
+					connected = true;
+					$('#disconnect').val("Disconnect");
+					message('<p class="event">Connected!');
+				}
+				socket.onmessage = function(msg){
+					message('<p class="message">'+msg.data);
+				}
+				socket.onclose = function() {
+					connected = false;
+					message('<p class="event">Disconnected');
+					$('#disconnect').val("Connect");
+				}
+				socket.onerror = function(error) {
+					console.log(error);
+					message('<p class="warning">Error!</p>')
+				}
+				function send(){
+					if(!connected) {
+						message('<p class="warning">Not connected!</p>');
+						return;
+					}
+					var text = $('#text').val();
+					try {
+						socket.send(text);
+					}
+					catch(exception) {
+						message('<p class="warning">');
+					}
+					$('#text').val("");
+				}
+				
+				function message(msg) {
+					$('#chatLog').append(msg+'</p>');
+				}
+				$('#text').keypress(function(event) {
+					if (event.keyCode == '13') {
+						send();
+					}
+				});
+				$('#disconnect').click(function(){
+					if($('#disconnect').val() == "Disconnect")
+					{
+						try {
+							socket.close();
+							//message('<p class="event">Disconnected');
+							//$('#disconnect').val("Connect");
+							//connected = false;
+						}
+						catch(exception) {
+							message('<p class="warning">Unable to disconnect!?</p>');
+						}
+					}
+					else
+					{
+						connect();
+					}
+				});
+			}
+			catch(exception) {
+				message('<p><b><font color=\"red\">'+exception+'</font></b>');
+			}
+			
+		}
+	}
 });
 </script>
 <title>OnliChat </title>
 </head>
-<body>
-<div id="wrapper">
-    <div id="container">
-        <h1>OnliChat by Yours Truely</h1>
-        <div id="chatLog">
-        </div>
-        <input id="text" type="text" />
-        <button id="disconnect">Disconnect</button>
-    </div>
-</div>
-</body>
+	<body>
+		<div id="wrapper">
+			<div id="container">
+					<h1>OnliChat by Yours Truely</h1>
+					<div id="chatLog">
+					</div>
+					<input id="text" type="text" />
+					<button id="disconnect">Disconnect</button>
+			</div>
+		</div>
+	</body>
 </html>​
 
